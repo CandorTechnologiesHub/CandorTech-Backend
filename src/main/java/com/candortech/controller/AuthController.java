@@ -7,7 +7,7 @@ import com.candortech.dto.response.ApiResponse;
 import com.candortech.entity.UserProfile;
 import com.candortech.enums.USER_ROLE;
 import com.candortech.repository.UserRepository;
-import com.candortech.service.Impl.CustomUserDetails;
+import com.candortech.service.impl.CustomUserDetails;
 import com.candortech.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
