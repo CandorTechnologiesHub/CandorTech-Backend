@@ -3,6 +3,7 @@ package com.candortech.controller;
 import com.candortech.config.security.JwtProvider;
 import com.candortech.dto.AuthResponse;
 import com.candortech.dto.LoginRequest;
+import com.candortech.dto.response.ApiResponse;
 import com.candortech.entity.UserProfile;
 import com.candortech.enums.USER_ROLE;
 import com.candortech.repository.UserRepository;
@@ -34,7 +35,7 @@ public class AuthController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody UserProfile user) throws Exception {
+    public ResponseEntity<ApiResponse<AuthResponse>> createUserHandler(@RequestBody UserProfile user) throws Exception {
         UserProfile isEmailExist  = userRepository.findByEmail(user.getEmail());
         if(isEmailExist != null){
             throw new Exception("Email is already used with another account");
@@ -56,7 +57,12 @@ public class AuthController {
         authResponse.setMessage("Register success");
         authResponse.setRole(savedUser.getRole());
 
-        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
+        return new ResponseEntity<>(
+                ApiResponse.success(
+                        "User Registration Successful",
+                        authResponse
+                ), HttpStatus.CREATED
+        );
     }
 
     @PostMapping("/signin")
