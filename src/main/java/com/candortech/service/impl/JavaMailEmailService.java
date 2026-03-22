@@ -1,6 +1,7 @@
 package com.candortech.service.impl;
 
 import com.candortech.config.MailProperties;
+import com.candortech.enums.OtpPurpose;
 import com.candortech.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -42,7 +43,7 @@ public class JavaMailEmailService implements EmailService {
 
     @Async
     @Override
-    public CompletableFuture<Void> sendOtpEmail(String toEmail, String toName, String otpCode, int expiryMinutes) {
+    public CompletableFuture<Void> sendOtpEmail(String toEmail, String toName, String otpCode, int expiryMinutes, OtpPurpose purpose) {
         try {
             retryTemplate.execute(ctx -> {
                 Context thymeleafCtx = new Context();
@@ -50,13 +51,13 @@ public class JavaMailEmailService implements EmailService {
                 thymeleafCtx.setVariable("otpCode", otpCode);
                 thymeleafCtx.setVariable("expiryMinutes", expiryMinutes);
                 String html = templateEngine.process("email/otp", thymeleafCtx);
-                sendHtmlEmail(toEmail, mailProperties.getTemplates().getOtpSubject(), html);
+                sendHtmlEmail(toEmail, mailProperties.getTemplates().resolveOtpSubject(purpose), html);
                 return null;
             });
-            log.info("OTP email dispatched via JavaMail to {}", toEmail);
+            log.info("OTP email ({}) dispatched via JavaMail to {}", purpose, toEmail);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            log.error("JavaMail: all retry attempts exhausted for OTP email to {}: {}", toEmail, e.getMessage(), e);
+            log.error("JavaMail: all retry attempts exhausted for OTP email ({}) to {}: {}", purpose, toEmail, e.getMessage(), e);
             return CompletableFuture.failedFuture(e);
         }
     }

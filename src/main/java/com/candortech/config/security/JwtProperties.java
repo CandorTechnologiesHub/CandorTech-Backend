@@ -18,6 +18,6 @@ public class JwtProperties {
     /** HTTP header that carries the token. Default: Authorization */
     private String header = "Authorization";
 
-    /** Scheme prefix in the header value (include the trailing space). Default: Bearer  */
-    private String tokenPrefix = "Bearer ";
+    /** Scheme prefix in the header value. Default: Bearer */
+    private String tokenPrefix = "Bearer";
 }

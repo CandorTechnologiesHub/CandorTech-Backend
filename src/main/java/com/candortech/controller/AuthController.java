@@ -3,12 +3,16 @@ package com.candortech.controller;
 import com.candortech.config.security.JwtProvider;
 import com.candortech.dto.AuthResponse;
 import com.candortech.dto.LoginRequest;
+import com.candortech.dto.request.ForgotPasswordRequest;
+import com.candortech.dto.request.ResetPasswordRequest;
 import com.candortech.dto.response.ApiResponse;
 import com.candortech.entity.UserProfile;
 import com.candortech.enums.USER_ROLE;
 import com.candortech.repository.UserRepository;
-import com.candortech.service.impl.CustomUserDetails;
+import com.candortech.service.PasswordResetService;
 import com.candortech.service.UserService;
+import com.candortech.service.impl.CustomUserDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +23,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
 
@@ -32,6 +41,7 @@ public class AuthController {
     private final JwtProvider jwtProvider;
     private final CustomUserDetails customUserDetails;
     private final UserService userService;
+    private final PasswordResetService passwordResetService;
 
 
     @PostMapping("/signup")
@@ -42,7 +52,10 @@ public class AuthController {
         }
         UserProfile createUser = new UserProfile();
         createUser.setEmail(user.getEmail());
-        createUser.setFullName(user.getFullName());
+        createUser.setFirstName(user.getFirstName());
+        createUser.setLastName(user.getLastName());
+        createUser.setOtherNames(user.getOtherNames());
+        createUser.setPhone(user.getPhone());
         createUser.setRole(user.getRole());
         createUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
@@ -88,6 +101,18 @@ public class AuthController {
     public ResponseEntity<UserProfile> findUserByJwtToken(@RequestHeader("Authorization") String jwt) throws Exception{
         UserProfile user = userService.findUserByJwtToken(jwt);
         return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.initiatePasswordReset(request.email());
+        return ResponseEntity.ok(ApiResponse.success("If an account with that email exists, a reset link has been sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.token(), request.newPassword(), request.confirmPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully."));
     }
 
     private Authentication authenticate(String username, String password) {

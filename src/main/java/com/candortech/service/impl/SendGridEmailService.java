@@ -1,6 +1,7 @@
 package com.candortech.service.impl;
 
 import com.candortech.config.MailProperties;
+import com.candortech.enums.OtpPurpose;
 import com.candortech.service.EmailService;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
@@ -46,7 +47,7 @@ public class SendGridEmailService implements EmailService {
 
     @Async
     @Override
-    public CompletableFuture<Void> sendOtpEmail(String toEmail, String toName, String otpCode, int expiryMinutes) {
+    public CompletableFuture<Void> sendOtpEmail(String toEmail, String toName, String otpCode, int expiryMinutes, OtpPurpose purpose) {
         try {
             retryTemplate.execute(ctx -> {
                 Context thymeleafCtx = new Context();
@@ -54,13 +55,13 @@ public class SendGridEmailService implements EmailService {
                 thymeleafCtx.setVariable("otpCode", otpCode);
                 thymeleafCtx.setVariable("expiryMinutes", expiryMinutes);
                 String html = templateEngine.process("email/otp", thymeleafCtx);
-                dispatch(toEmail, toName, mailProperties.getTemplates().getOtpSubject(), html);
+                dispatch(toEmail, toName, mailProperties.getTemplates().resolveOtpSubject(purpose), html);
                 return null;
             });
-            log.info("OTP email dispatched via SendGrid to {}", toEmail);
+            log.info("OTP email ({}) dispatched via SendGrid to {}", purpose, toEmail);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            log.error("SendGrid: all retry attempts exhausted for OTP email to {}: {}", toEmail, e.getMessage(), e);
+            log.error("SendGrid: all retry attempts exhausted for OTP email ({}) to {}: {}", purpose, toEmail, e.getMessage(), e);
             return CompletableFuture.failedFuture(e);
         }
     }

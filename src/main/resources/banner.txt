@@ -1,0 +1,10 @@
+
+${AnsiColor.BRIGHT_CYAN}
+  ██████╗ █████╗ ███╗   ██╗██████╗  ██████╗ ██████╗
+ ██╔════╝██╔══██╗████╗  ██║██╔══██╗██╔═══██╗██╔══██╗
+ ██║     ███████║██╔██╗ ██║██║  ██║██║   ██║██████╔╝
+ ██║     ██╔══██║██║╚██╗██║██║  ██║██║   ██║██╔══██╗
+ ╚██████╗██║  ██║██║ ╚████║██████╔╝╚██████╔╝██║  ██║
+  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝╚═╝  ╚═╝
+${AnsiColor.DEFAULT}
+${AnsiStyle.BOLD}${AnsiColor.WHITE}  Fintech Wallet Platform${AnsiStyle.NORMAL}  ${AnsiColor.BRIGHT_BLACK}|  Spring Boot ${spring-boot.version}  |  v${spring.application.version:1.0.0}${AnsiColor.DEFAULT}
