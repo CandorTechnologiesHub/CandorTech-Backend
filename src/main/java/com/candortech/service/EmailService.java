@@ -1,5 +1,7 @@
 package com.candortech.service;
 
+import com.candortech.enums.OtpPurpose;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -11,13 +13,15 @@ public interface EmailService {
 
     /**
      * Send a one-time password (OTP) email to the given recipient.
+     * The email subject is derived from the {@code purpose} parameter.
      *
      * @param toEmail       recipient email address
      * @param toName        recipient display name
      * @param otpCode       the 6-digit OTP to include in the email
      * @param expiryMinutes how many minutes until the OTP expires
+     * @param purpose       the reason the OTP was issued; determines the email subject
      */
-    CompletableFuture<Void> sendOtpEmail(String toEmail, String toName, String otpCode, int expiryMinutes);
+    CompletableFuture<Void> sendOtpEmail(String toEmail, String toName, String otpCode, int expiryMinutes, OtpPurpose purpose);
 
     /**
      * Send a password-reset email containing a secure reset link.
