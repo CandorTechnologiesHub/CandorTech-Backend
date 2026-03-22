@@ -91,7 +91,7 @@ class PasswordResetServiceImplTest {
         ArgumentCaptor<String> resetLinkCaptor = ArgumentCaptor.forClass(String.class);
         verify(emailService).sendPasswordResetEmail(
                 eq(user.getEmail()),
-                eq(user.getFullName()),
+                eq(user.getFirstName()),
                 resetLinkCaptor.capture(),
                 eq(EXPIRY_MINUTES));
 
@@ -195,7 +195,7 @@ class PasswordResetServiceImplTest {
     private UserProfile buildUser() {
         UserProfile user = new UserProfile();
         user.setEmail("alice@example.com");
-        user.setFullName("Alice");
+        user.setFirstName("Alice");
         user.setPassword("old-encoded-password");
         return user;
     }

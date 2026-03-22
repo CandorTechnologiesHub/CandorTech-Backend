@@ -1,9 +1,12 @@
 package com.candortech.dto;
 
 import com.candortech.enums.USER_ROLE;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
+@Builder
 public class AuthResponse {
     private String jwt;
     private String message;

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +60,18 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(ex.getMessage())
         );
     }
+
+    // To Handle no resource found exception
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoResource(
+            NoResourceFoundException ex) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ApiResponse.error(ex.getMessage())
+        );
+    }
+
+
 
     // Catch ALL fallback (very important)
     @ExceptionHandler(Exception.class)
