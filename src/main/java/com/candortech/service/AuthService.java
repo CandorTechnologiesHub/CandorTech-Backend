@@ -3,6 +3,7 @@ package com.candortech.service;
 import com.candortech.dto.AuthResponse;
 import com.candortech.dto.LoginRequest;
 import com.candortech.dto.request.UserSignupRequest;
+import com.candortech.dto.request.GoogleLoginRequest;
 
 /**
  * Defines authentication-related operations for user account access and session handling.
@@ -28,6 +29,14 @@ public interface AuthService {
      * @return the authentication response containing session or token data
      */
     AuthResponse login(LoginRequest request);
+
+    /**
+     * Authenticates a user with a Google Single Sign-On token.
+     *
+     * @param request - the Google login request containing the ID token
+     * @return the authentication response containing session or token data
+     */
+    AuthResponse googleLogin(GoogleLoginRequest request);
 
     /**
      * Logs out the currently authenticated user and invalidates the active session.

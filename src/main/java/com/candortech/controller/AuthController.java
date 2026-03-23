@@ -3,6 +3,7 @@ package com.candortech.controller;
 import com.candortech.dto.AuthResponse;
 import com.candortech.dto.LoginRequest;
 import com.candortech.dto.request.ForgotPasswordRequest;
+import com.candortech.dto.request.GoogleLoginRequest;
 import com.candortech.dto.request.ResetPasswordRequest;
 import com.candortech.dto.request.UserSignupRequest;
 import com.candortech.dto.response.ApiResponse;
@@ -47,6 +48,16 @@ public class AuthController {
                 ApiResponse.success(
                         "Login Successful",
                         authService.login(req)
+                )
+        );
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Google Login Successful",
+                        authService.googleLogin(request)
                 )
         );
     }

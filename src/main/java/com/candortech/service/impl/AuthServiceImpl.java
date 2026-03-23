@@ -4,6 +4,7 @@ import com.candortech.config.security.JwtProvider;
 import com.candortech.dto.AuthResponse;
 import com.candortech.dto.LoginRequest;
 import com.candortech.dto.request.UserSignupRequest;
+import com.candortech.dto.request.GoogleLoginRequest;
 import com.candortech.entity.UserProfile;
 import com.candortech.enums.OtpPurpose;
 import com.candortech.enums.USER_ROLE;
@@ -20,8 +21,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import org.springframework.beans.factory.annotation.Value;
+
 import java.security.SecureRandom;
 import java.util.Collection;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +39,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final EmailService emailService;
+
+    @Value("${app.security.google.client-id}")
+    private String googleClientId;
 
     @Override
     public AuthResponse signup(UserSignupRequest request) {
@@ -90,6 +101,56 @@ public class AuthServiceImpl implements AuthService {
                 .role(role != null ? USER_ROLE.valueOf(role) : null)
                 .message("Login success")
                 .build();
+    }
+
+    @Override
+    public AuthResponse googleLogin(GoogleLoginRequest request) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(request.idToken());
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+
+                String email = payload.getEmail();
+                String familyName = (String) payload.get("family_name");
+                String givenName = (String) payload.get("given_name");
+
+                UserProfile user = userRepository.findByEmail(email);
+
+                if (user == null) {
+                    user = new UserProfile();
+                    user.setEmail(email);
+                    user.setFirstName(givenName != null ? givenName : "GoogleUser");
+                    user.setLastName(familyName != null ? familyName : "");
+                    user.setPassword(passwordEncoder.encode(generate6DigitOtp() + "Ggl!aA"));
+                    user = userRepository.save(user);
+                }
+
+                UserDetails userDetails = customUserDetails.loadUserByUsername(user.getEmail());
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                String jwt = jwtProvider.generateToken(authentication);
+
+                return AuthResponse.builder()
+                        .jwt(jwt)
+                        .role(user.getRole())
+                        .message("Google login success")
+                        .build();
+
+            } else {
+                throw new IllegalArgumentException("Invalid Google ID token.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Google token verification failed", e);
+        }
     }
 
     @Override
