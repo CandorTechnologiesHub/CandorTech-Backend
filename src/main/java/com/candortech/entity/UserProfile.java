@@ -45,7 +45,7 @@ public class UserProfile {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(unique = true, length = 20)
     private String phone;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

@@ -41,6 +41,15 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    // Handle authentication exceptions
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAuthException(AuthException ex) {
+
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     // Handle illegal arguments (bad request)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Object>> handleIllegalArgument(

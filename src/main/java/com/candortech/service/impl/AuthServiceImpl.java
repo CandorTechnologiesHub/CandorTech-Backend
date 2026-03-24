@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.candortech.exception.AuthException;
-
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.UUID;
@@ -59,8 +58,7 @@ public class AuthServiceImpl implements AuthService {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails,
                 null,
-                userDetails.getAuthorities()
-        );
+                userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = jwtProvider.generateToken(authentication);
@@ -72,8 +70,7 @@ public class AuthServiceImpl implements AuthService {
                 savedUser.getFirstName(),
                 registrationOtp,
                 10,
-                OtpPurpose.REGISTRATION
-        );
+                OtpPurpose.REGISTRATION);
 
         return AuthResponse.builder()
                 .jwt(jwt)
@@ -87,7 +84,8 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         UserProfile user = userRepository.findByEmail(request.getEmail());
         if (user != null && user.isOAuthAccount()) {
-            throw new AuthException("Password login is disabled for Google-registered accounts. Please use Google Login.");
+            throw new AuthException(
+                    "Password login is disabled for Google-registered accounts. Please use Google Login.");
         }
 
         Authentication authentication = authenticate(request.getEmail(), request.getPassword());
@@ -143,8 +141,7 @@ public class AuthServiceImpl implements AuthService {
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userDetails,
                     null,
-                    userDetails.getAuthorities()
-            );
+                    userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             String jwt = jwtProvider.generateToken(authentication);
@@ -176,8 +173,7 @@ public class AuthServiceImpl implements AuthService {
         return new UsernamePasswordAuthenticationToken(
                 userDetails,
                 null,
-                userDetails.getAuthorities()
-        );
+                userDetails.getAuthorities());
     }
 
     private String generate6DigitOtp() {
