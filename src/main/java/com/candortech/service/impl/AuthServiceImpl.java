@@ -20,16 +20,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import org.springframework.beans.factory.annotation.Value;
+import com.candortech.exception.AuthException;
 
 import java.security.SecureRandom;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,9 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final EmailService emailService;
-
-    @Value("${app.security.google.client-id}")
-    private String googleClientId;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Override
     public AuthResponse signup(UserSignupRequest request) {
@@ -84,11 +79,17 @@ public class AuthServiceImpl implements AuthService {
                 .jwt(jwt)
                 .role(savedUser.getRole())
                 .message("Register success")
+                .isNewUser(true)
                 .build();
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        UserProfile user = userRepository.findByEmail(request.getEmail());
+        if (user != null && user.isOAuthAccount()) {
+            throw new AuthException("Password login is disabled for Google-registered accounts. Please use Google Login.");
+        }
+
         Authentication authentication = authenticate(request.getEmail(), request.getPassword());
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
@@ -100,56 +101,63 @@ public class AuthServiceImpl implements AuthService {
                 .jwt(jwt)
                 .role(role != null ? USER_ROLE.valueOf(role) : null)
                 .message("Login success")
+                .isNewUser(false)
                 .build();
     }
 
     @Override
     public AuthResponse googleLogin(GoogleLoginRequest request) {
+        GoogleIdToken idToken;
         try {
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
-                    .setAudience(Collections.singletonList(googleClientId))
+            idToken = googleIdTokenVerifier.verify(request.idToken());
+        } catch (Exception e) {
+            throw new AuthException("Google token verification failed: " + e.getMessage());
+        }
+
+        if (idToken != null) {
+            GoogleIdToken.Payload payload = idToken.getPayload();
+
+            if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+                throw new AuthException("Google account email is not verified");
+            }
+
+            String email = payload.getEmail();
+            String familyName = (String) payload.get("family_name");
+            String givenName = (String) payload.get("given_name");
+
+            UserProfile user = userRepository.findByEmail(email);
+            boolean isNewUser = false;
+
+            if (user == null) {
+                isNewUser = true;
+                user = new UserProfile();
+                user.setEmail(email);
+                user.setFirstName(givenName != null ? givenName : "GoogleUser");
+                user.setLastName(familyName != null ? familyName : "");
+                user.setOAuthAccount(true);
+                user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                user = userRepository.save(user);
+            }
+
+            UserDetails userDetails = customUserDetails.loadUserByUsername(user.getEmail());
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            String jwt = jwtProvider.generateToken(authentication);
+
+            return AuthResponse.builder()
+                    .jwt(jwt)
+                    .role(user.getRole())
+                    .message("Google login success")
+                    .isNewUser(isNewUser)
                     .build();
 
-            GoogleIdToken idToken = verifier.verify(request.idToken());
-            if (idToken != null) {
-                GoogleIdToken.Payload payload = idToken.getPayload();
-
-                String email = payload.getEmail();
-                String familyName = (String) payload.get("family_name");
-                String givenName = (String) payload.get("given_name");
-
-                UserProfile user = userRepository.findByEmail(email);
-
-                if (user == null) {
-                    user = new UserProfile();
-                    user.setEmail(email);
-                    user.setFirstName(givenName != null ? givenName : "GoogleUser");
-                    user.setLastName(familyName != null ? familyName : "");
-                    user.setPassword(passwordEncoder.encode(generate6DigitOtp() + "Ggl!aA"));
-                    user = userRepository.save(user);
-                }
-
-                UserDetails userDetails = customUserDetails.loadUserByUsername(user.getEmail());
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                String jwt = jwtProvider.generateToken(authentication);
-
-                return AuthResponse.builder()
-                        .jwt(jwt)
-                        .role(user.getRole())
-                        .message("Google login success")
-                        .build();
-
-            } else {
-                throw new IllegalArgumentException("Invalid Google ID token.");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Google token verification failed", e);
+        } else {
+            throw new AuthException("Invalid Google ID token.");
         }
     }
 

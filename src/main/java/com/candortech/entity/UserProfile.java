@@ -73,6 +73,9 @@ public class UserProfile {
     @Column(name = "biometric_enabled", nullable = false)
     private boolean biometricEnabled = false;
 
+    @Column(name = "is_oauth_account", nullable = false)
+    private boolean isOAuthAccount = false;
+
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled = true;
 
