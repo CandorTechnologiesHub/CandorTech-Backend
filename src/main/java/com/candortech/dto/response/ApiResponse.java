@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -14,7 +15,7 @@ public class ApiResponse<T> {
     private boolean success;
     private String message;
     private T data;
-    private Object errors;
+    private Map<String, String> errors;
     private LocalDateTime timestamp;
 
     public static <T> ApiResponse<T> success(String message, T data) {
@@ -34,7 +35,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static <T> ApiResponse<T> error(String message, Object errors) {
+    public static <T> ApiResponse<T> error(String message, Map<String, String> errors) {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)

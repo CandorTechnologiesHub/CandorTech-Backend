@@ -7,7 +7,7 @@ import com.candortech.dto.request.GoogleLoginRequest;
 import com.candortech.dto.request.ResetPasswordRequest;
 import com.candortech.dto.request.UserSignupRequest;
 import com.candortech.dto.response.ApiResponse;
-import com.candortech.entity.UserProfile;
+import com.candortech.dto.response.UserProfileResponse;
 import com.candortech.service.AuthService;
 import com.candortech.service.PasswordResetService;
 import com.candortech.service.UserService;
@@ -32,7 +32,7 @@ public class AuthController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<AuthResponse>> createUserHandler(@RequestBody UserSignupRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> createUserHandler(@Valid @RequestBody UserSignupRequest request) {
         return new ResponseEntity<>(
                 ApiResponse.success(
                         "User Created Successfully",
@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<ApiResponse<AuthResponse>> signIn(@RequestBody LoginRequest req) {
+    public ResponseEntity<ApiResponse<AuthResponse>> signIn(@Valid @RequestBody LoginRequest req) {
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Login Successful",
@@ -69,9 +69,10 @@ public class AuthController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<UserProfile> findUserByJwtToken(@RequestHeader("Authorization") String jwt) throws Exception{
-        UserProfile user = userService.findUserByJwtToken(jwt);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<UserProfileResponse>> findUserByJwtToken(@RequestHeader("Authorization") String jwt) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Profile retrieved", UserProfileResponse.from(userService.findUserByJwtToken(jwt)))
+        );
     }
 
     @PostMapping("/forgot-password")

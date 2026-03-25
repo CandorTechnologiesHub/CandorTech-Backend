@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.Collections;
+import javax.crypto.SecretKey;
 import java.util.List;
 
 @Configuration
@@ -22,15 +22,23 @@ import java.util.List;
 public class AppConfig {
 
     private final JwtProperties jwtProperties;
+    private final SecretKey jwtSecretKey;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
+    @Value("${app.cors.allowed-methods}")
+    private List<String> allowedMethods;
+
+    @Value("${app.cors.allowed-headers}")
+    private List<String> allowedHeaders;
+
     @Value("${app.cors.max-age-seconds:3600}")
     private long corsMaxAge;
 
-    public AppConfig(JwtProperties jwtProperties) {
+    public AppConfig(JwtProperties jwtProperties, SecretKey jwtSecretKey) {
         this.jwtProperties = jwtProperties;
+        this.jwtSecretKey = jwtSecretKey;
     }
 
     @Bean
@@ -41,7 +49,7 @@ public class AppConfig {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(new JwtTokenValidator(jwtProperties), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JwtTokenValidator(jwtSecretKey, jwtProperties), BasicAuthenticationFilter.class)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
@@ -52,9 +60,9 @@ public class AppConfig {
         return request -> {
             CorsConfiguration cfg = new CorsConfiguration();
             cfg.setAllowedOrigins(allowedOrigins);
-            cfg.setAllowedMethods(Collections.singletonList("*"));
+            cfg.setAllowedMethods(allowedMethods);
             cfg.setAllowCredentials(true);
-            cfg.setAllowedHeaders(Collections.singletonList("*"));
+            cfg.setAllowedHeaders(allowedHeaders);
             cfg.setExposedHeaders(List.of(jwtProperties.getHeader()));
             cfg.setMaxAge(corsMaxAge);
             return cfg;

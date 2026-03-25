@@ -6,6 +6,7 @@ import com.candortech.entity.UserProfile;
 import com.candortech.repository.UserRepository;
 import com.candortech.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,8 +17,9 @@ public class UserServiceImpl implements UserService {
     private final JwtProvider jwtProvider;
 
     @Override
-    public UserProfile findUserByJwtToken(String jwt) throws Exception {
+    public UserProfile findUserByJwtToken(String jwt) {
         String email = jwtProvider.getEmailFromJwtToken(jwt);
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 }

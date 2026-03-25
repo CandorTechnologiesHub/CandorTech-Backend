@@ -2,7 +2,7 @@ package com.candortech.service.impl;
 
 
 import com.candortech.entity.UserProfile;
-import com.candortech.enums.USER_ROLE;
+import com.candortech.enums.UserRole;
 import com.candortech.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NullMarked;
@@ -25,12 +25,10 @@ public class CustomUserDetails implements UserDetailsService {
     @Override
     @NullMarked
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserProfile user = userRepository.findByEmail(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found with email " + username);
-        }
-        USER_ROLE role = user.getRole();
-        if (role == null) role = USER_ROLE.ROLE_USER;
+        UserProfile user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email " + username));
+        UserRole role = user.getRole();
+        if (role == null) role = UserRole.ROLE_USER;
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority(role.toString()));
         return new User(user.getEmail(), user.getPassword(), authorities);

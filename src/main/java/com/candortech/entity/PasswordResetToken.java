@@ -38,6 +38,7 @@ public class PasswordResetToken {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    @Column(nullable = false)
     private boolean used = false;
 
     public PasswordResetToken(String tokenHash, UserProfile user, LocalDateTime expiresAt) {
