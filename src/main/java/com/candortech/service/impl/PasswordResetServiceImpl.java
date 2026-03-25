@@ -7,8 +7,7 @@ import com.candortech.repository.PasswordResetTokenRepository;
 import com.candortech.repository.UserRepository;
 import com.candortech.service.EmailService;
 import com.candortech.service.PasswordResetService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,12 +18,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class PasswordResetServiceImpl implements PasswordResetService {
-
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetServiceImpl.class);
 
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
@@ -51,7 +50,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     @Transactional
     public void initiatePasswordReset(String email) {
-        UserProfile user = userRepository.findByEmail(email);
+        UserProfile user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             // Silent no-op to prevent email enumeration
             log.debug("Password reset requested for unknown email: {}", email);
@@ -98,13 +97,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     private String hashToken(String rawToken) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(hash.length * 2);
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);
         }

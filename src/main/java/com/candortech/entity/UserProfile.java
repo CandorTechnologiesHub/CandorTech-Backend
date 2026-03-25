@@ -2,7 +2,7 @@ package com.candortech.entity;
 
 import com.candortech.enums.AccountStatus;
 import com.candortech.enums.KycLevel;
-import com.candortech.enums.USER_ROLE;
+import com.candortech.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,7 +54,7 @@ public class UserProfile {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private USER_ROLE role = USER_ROLE.ROLE_USER;
+    private UserRole role = UserRole.ROLE_USER;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "kyc_level", nullable = false, length = 10)

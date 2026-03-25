@@ -2,7 +2,6 @@ package com.candortech.config.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,9 +24,9 @@ public class JwtTokenValidator extends OncePerRequestFilter {
     private final SecretKey key;
     private final JwtProperties jwtProperties;
 
-    public JwtTokenValidator(JwtProperties jwtProperties) {
+    public JwtTokenValidator(SecretKey jwtSecretKey, JwtProperties jwtProperties) {
+        this.key = jwtSecretKey;
         this.jwtProperties = jwtProperties;
-        this.key = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
     }
 
     @Override
@@ -38,7 +37,11 @@ public class JwtTokenValidator extends OncePerRequestFilter {
         if (jwt != null) {
             jwt = jwt.substring(jwtProperties.getTokenPrefix().length()).stripLeading();
             try {
-                Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).getBody();
+                Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(jwt)
+                    .getPayload();
 
                 String email = String.valueOf(claims.get("email"));
                 String authorities = String.valueOf(claims.get("authorities"));

@@ -4,6 +4,7 @@ import com.candortech.config.security.AppConfig;
 import com.candortech.config.security.JwtProvider;
 import com.candortech.exception.ApiException;
 import com.candortech.repository.UserRepository;
+import com.candortech.service.AuthService;
 import com.candortech.service.PasswordResetService;
 import com.candortech.service.UserService;
 import com.candortech.service.impl.CustomUserDetails;
@@ -36,6 +37,7 @@ class AuthControllerPasswordResetTest {
 
     @Autowired MockMvc mockMvc;
 
+    @MockitoBean AuthService authService;
     @MockitoBean PasswordResetService passwordResetService;
     @MockitoBean UserRepository userRepository;
     @MockitoBean UserService userService;

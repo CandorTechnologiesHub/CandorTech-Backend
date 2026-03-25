@@ -3,14 +3,17 @@ package com.candortech.service.impl;
 import com.candortech.config.security.JwtProvider;
 import com.candortech.dto.AuthResponse;
 import com.candortech.dto.LoginRequest;
-import com.candortech.dto.request.UserSignupRequest;
 import com.candortech.dto.request.GoogleLoginRequest;
+import com.candortech.dto.request.UserSignupRequest;
 import com.candortech.entity.UserProfile;
 import com.candortech.enums.OtpPurpose;
-import com.candortech.enums.USER_ROLE;
+import com.candortech.enums.UserRole;
+import com.candortech.exception.AuthException;
 import com.candortech.repository.UserRepository;
 import com.candortech.service.AuthService;
 import com.candortech.service.EmailService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,9 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.candortech.exception.AuthException;
+
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.UUID;
@@ -37,10 +38,11 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     @Override
     public AuthResponse signup(UserSignupRequest request) {
-        UserProfile existingUser = userRepository.findByEmail(request.email());
-        if (existingUser != null) {
+        if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Email is already used with another account");
         }
 
@@ -82,13 +84,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        UserProfile user = userRepository.findByEmail(request.getEmail());
-        if (user != null && user.isOAuthAccount()) {
-            throw new AuthException(
-                    "Password login is disabled for Google-registered accounts. Please use Google Login.");
-        }
+        userRepository.findByEmail(request.email())
+                .filter(UserProfile::isOAuthAccount)
+                .ifPresent(u -> { throw new AuthException("Invalid credentials"); });
 
-        Authentication authentication = authenticate(request.getEmail(), request.getPassword());
+        Authentication authentication = authenticate(request.email(), request.password());
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String role = authorities.isEmpty() ? null : authorities.iterator().next().getAuthority();
@@ -97,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
 
         return AuthResponse.builder()
                 .jwt(jwt)
-                .role(role != null ? USER_ROLE.valueOf(role) : null)
+                .role(role != null ? UserRole.valueOf(role) : null)
                 .message("Login success")
                 .isNewUser(false)
                 .build();
@@ -123,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
             String familyName = (String) payload.get("family_name");
             String givenName = (String) payload.get("given_name");
 
-            UserProfile user = userRepository.findByEmail(email);
+            UserProfile user = userRepository.findByEmail(email).orElse(null);
             boolean isNewUser = false;
 
             if (user == null) {
@@ -167,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
         UserDetails userDetails = customUserDetails.loadUserByUsername(username);
 
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-            throw new BadCredentialsException("Invalid password....");
+            throw new BadCredentialsException("Invalid credentials");
         }
 
         return new UsernamePasswordAuthenticationToken(
@@ -177,8 +177,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String generate6DigitOtp() {
-        SecureRandom secureRandom = new SecureRandom();
-        int otp = 100000 + secureRandom.nextInt(900000);
-        return String.valueOf(otp);
+        return String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
     }
 }

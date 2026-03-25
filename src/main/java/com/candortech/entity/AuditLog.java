@@ -1,6 +1,6 @@
 package com.candortech.entity;
 
-import com.candortech.enums.USER_ROLE;
+import com.candortech.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,7 +38,7 @@ public class AuditLog {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "actor_role", nullable = false, length = 20)
-    private USER_ROLE actorRole;
+    private UserRole actorRole;
 
     @Column(nullable = false, length = 100)
     private String action;

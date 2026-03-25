@@ -1,6 +1,6 @@
 package com.candortech.dto;
 
-import com.candortech.enums.USER_ROLE;
+import com.candortech.enums.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -9,6 +9,6 @@ import lombok.Getter;
 public class AuthResponse {
     private String jwt;
     private String message;
-    private USER_ROLE role;
+    private UserRole role;
     private Boolean isNewUser;
 }

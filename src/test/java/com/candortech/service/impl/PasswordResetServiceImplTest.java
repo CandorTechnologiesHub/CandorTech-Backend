@@ -55,7 +55,7 @@ class PasswordResetServiceImplTest {
 
     @Test
     void initiatePasswordReset_unknownEmail_doesNothing() {
-        when(userRepository.findByEmail("nobody@example.com")).thenReturn(null);
+        when(userRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
 
         service.initiatePasswordReset("nobody@example.com");
 
@@ -65,7 +65,7 @@ class PasswordResetServiceImplTest {
     @Test
     void initiatePasswordReset_knownEmail_deletesOldTokensAndSavesNew() {
         UserProfile user = buildUser();
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(user);
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 
         service.initiatePasswordReset(user.getEmail());
 
@@ -84,7 +84,7 @@ class PasswordResetServiceImplTest {
     @Test
     void initiatePasswordReset_knownEmail_sendsResetEmailWithCorrectArgs() {
         UserProfile user = buildUser();
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(user);
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 
         service.initiatePasswordReset(user.getEmail());
 
@@ -102,7 +102,7 @@ class PasswordResetServiceImplTest {
     @Test
     void initiatePasswordReset_tokenHash_matchesRawTokenSha256() {
         UserProfile user = buildUser();
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(user);
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 
         service.initiatePasswordReset(user.getEmail());
 
