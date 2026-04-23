@@ -1,0 +1,15 @@
+# A Service gives a stable internal address to reach your pods.
+# Pods restart frequently and get new IPs each time.
+# The Service's address never changes — it's the reliable front door.
+apiVersion: v1
+kind: Service
+metadata:
+  name: candorapi-service
+  namespace: candorapi
+spec:
+  selector:
+    app: candorapi                     # Forward traffic to pods with this label
+  type: ClusterIP                      # Only reachable inside the cluster
+  ports:
+    - port: 80                         # The Service listens on port 80
+      targetPort: 8081                 # Forwards to container port 8081

@@ -1,4 +1,9 @@
 package com.candortech.exception;
 
-public class AuthException {
+import org.springframework.http.HttpStatus;
+
+public class AuthException extends ApiException {
+    public AuthException(String message) {
+        super(message, HttpStatus.UNAUTHORIZED.value());
+    }
 }

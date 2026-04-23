@@ -1,37 +1,23 @@
 package com.candortech.aspect;
 
-import org.aspectj.lang.JoinPoint;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@Slf4j
 public class LoggingAspect {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
-
-    @Before("execution(* com.candortech.aspect..*(..))")
-    public void logBeforeMethod(JoinPoint joinPoint) {
-        log.info("Enter: {}() with argument[s] = {}", joinPoint.getSignature().getName(), joinPoint.getArgs());
-    }
-
-    @AfterReturning(pointcut = "execution(* com.candortech.aspect..*(..))", returning = "result")
-    public void logAfterMethod(JoinPoint joinPoint, Object result) {
-        log.info("Exit: {}() with result = {}", joinPoint.getSignature().getName(), result);
-    }
-
-    @Around("execution(* com.candortech.aspect..*(..))")
+    @Around("execution(* com.candortech.service..*(..)) || execution(* com.candortech.controller..*(..))")
     public Object logAroundMethod(ProceedingJoinPoint joinPoint) throws Throwable {
+        String method = joinPoint.getSignature().toShortString();
+        log.debug("Enter: {}", method);
         long startTime = System.currentTimeMillis();
         Object result = joinPoint.proceed();
-        long timeTaken = System.currentTimeMillis() - startTime;
-        log.info("Exit: {}() with result = {} and time taken = {} ms", joinPoint.getSignature().getName(), result, timeTaken);
+        log.debug("Exit: {} in {} ms", method, System.currentTimeMillis() - startTime);
         return result;
     }
 }

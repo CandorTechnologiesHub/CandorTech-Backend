@@ -1,0 +1,69 @@
+# Step 1: Create a temp folder on the server to hold the K8s files
+- name: Create temp directory for manifests
+  file:
+    path: "/tmp/k8s-{{ app_name }}"
+    state: directory
+    mode: '0755'
+
+# Step 2: Copy the k8s/ folder from the repo to the server
+- name: Copy K8s manifests to server
+  copy:
+    src: "../../k8s/"
+    dest: "/tmp/k8s-{{ app_name }}/"
+
+# Step 3: Replace :latest tag with the exact build number
+# This ensures we deploy the image Jenkins just built, not an old cached one
+- name: Update image tag in deployment manifest
+  replace:
+    path: "/tmp/k8s-{{ app_name }}/deployment.yaml"
+    regexp: ':latest'
+    replace: ":{{ image_tag }}"
+
+# Step 4: Create the namespace if it doesn't already exist
+# This is safe to run multiple times — it won't fail if namespace exists
+- name: Create namespace if not exists
+  shell: |
+    kubectl get namespace {{ app_namespace }} 2>/dev/null || kubectl create namespace {{ app_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+# Step 5: Apply all three K8s files (deployment, service, ingress)
+# kubectl apply is smart — it only changes what has changed
+- name: Apply all K8s manifests
+  shell: |
+    kubectl apply -f /tmp/k8s-{{ app_name }}/
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+# Step 6: Tell Kubernetes to restart the pods with the new image
+- name: Rollout restart deployment
+  shell: |
+    kubectl rollout restart deployment/{{ app_name }} -n {{ app_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+# Step 7: Wait here until all new pods are healthy
+# If a pod crashes, this step fails and the pipeline reports failure
+- name: Wait for rollout to complete
+  shell: |
+    kubectl rollout status deployment/{{ app_name }} -n {{ app_namespace }} --timeout=180s
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+# Step 8: Show what is running
+- name: Show running pods
+  shell: |
+    kubectl get pods -n {{ app_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: pods_result
+
+- name: Print pods
+  debug:
+    msg: "{{ pods_result.stdout_lines }}"
+
+# Step 9: Clean up the temp folder
+- name: Clean up temp manifests
+  file:
+    path: "/tmp/k8s-{{ app_name }}"
+    state: absent
