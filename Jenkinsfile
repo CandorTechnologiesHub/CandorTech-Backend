@@ -1,30 +1,21 @@
 pipeline {
     agent any
-
     environment {
-        // Change these two lines per repo
-        DOCKER_IMAGE    = 'lordibe/candorapi'
-        REPO_URL        = 'https://github.com/CandorTechnologiesHub/CandorTech-Backend.git'
-
-        // These stay the same — they reference Jenkins credentials you set up
+        DOCKER_IMAGE       = 'lordibe/candorapi'
+        REPO_URL           = 'https://github.com/CandorTechnologiesHub/CandorTech-Backend.git'
         DOCKER_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_TAG         = "${BUILD_NUMBER}"
     }
-
     stages {
-
         // ---------------------------------------------------------
         // STAGE 1: Checkout
-        // Jenkins pulls the latest code from GitHub
+        // Uses what Jenkins already checked out — no duplicate fetch
         // ---------------------------------------------------------
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                        url: "${REPO_URL}",
-                        credentialsId: 'github-credentials'
+                checkout scm
             }
         }
-
         // ---------------------------------------------------------
         // STAGE 2: Build and Test
         // Maven compiles the code and runs all unit tests
@@ -36,12 +27,13 @@ pipeline {
             }
             post {
                 always {
-                    // Publish test results in Jenkins UI
-                    junit 'target/surefire-reports/*.xml'
+                    // allowEmptyResults: true means pipeline won't fail
+                    // if there are no test files yet
+                    junit allowEmptyResults: true,
+                          testResults: 'target/surefire-reports/*.xml'
                 }
             }
         }
-
         // ---------------------------------------------------------
         // STAGE 3: Docker Build
         // Packages the compiled app into a Docker image
@@ -53,7 +45,6 @@ pipeline {
                 sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
             }
         }
-
         // ---------------------------------------------------------
         // STAGE 4: Docker Push
         // Uploads the image to Docker Hub so Kubernetes can pull it
@@ -65,7 +56,6 @@ pipeline {
                 sh "docker push ${DOCKER_IMAGE}:latest"
             }
         }
-
         // ---------------------------------------------------------
         // STAGE 5: Deploy via Ansible
         // Jenkins calls Ansible which SSHs into the server
@@ -82,7 +72,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo "========================================="
@@ -95,7 +84,6 @@ pipeline {
             echo "========================================="
         }
         always {
-            // Remove the local Docker image to free up disk space
             sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
             sh "docker logout || true"
         }
