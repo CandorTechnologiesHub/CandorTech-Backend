@@ -1,0 +1,34 @@
+# A Deployment tells Kubernetes:
+#   - which Docker image to run
+#   - how many copies (replicas) to keep running
+#   - how much CPU and RAM each copy is allowed to use
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: candorapi
+  namespace: candorapi
+spec:
+  replicas: 2                          # Run 2 copies for reliability
+  selector:
+    matchLabels:
+      app: candorapi
+  template:
+    metadata:
+      labels:
+        app: candorapi
+    spec:
+      containers:
+        - name: candorapi
+          image: lordibe/candorapi:latest
+          ports:
+            - containerPort: 8080      # The port inside the container
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+          resources:
+            requests:
+              memory: "256Mi"          # Minimum RAM guaranteed to this pod
+              cpu: "250m"              # 250m = 0.25 of a CPU core
+            limits:
+              memory: "512Mi"          # Maximum RAM this pod can use
+              cpu: "500m"              # Maximum CPU this pod can use

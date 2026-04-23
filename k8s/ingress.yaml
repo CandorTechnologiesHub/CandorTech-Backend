@@ -1,0 +1,27 @@
+# An Ingress is a routing rule. It tells the Nginx Ingress Controller:
+# "When a request comes in for candorapi.lordibe.tech, send it to candorapi-service"
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: candorapi-ingress
+  namespace: candorapi
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"    # Auto-issue SSL
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - candorapi.lordibe.tech
+      secretName: candorapi-tls                            # SSL cert stored here
+  rules:
+    - host: candorapi.lordibe.tech
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: candorapi-service
+                port:
+                  number: 80

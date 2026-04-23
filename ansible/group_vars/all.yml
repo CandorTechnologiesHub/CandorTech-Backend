@@ -1,0 +1,6 @@
+app_name: candorapi
+app_namespace: candorapi
+dockerhub_user: lordibe
+docker_image: "{{ dockerhub_user }}/candorapi"
+domain: candorapi.lordibe.tech
+kubeconfig_path: /home/lordibe/.kube/config
