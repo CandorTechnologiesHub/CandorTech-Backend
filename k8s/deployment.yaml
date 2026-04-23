@@ -21,10 +21,14 @@ spec:
         - name: candorapi
           image: lordibe/candorapi:latest
           ports:
-            - containerPort: 8080      # The port inside the container
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod"
+            - containerPort: 8081      # The port inside the container
+          envFrom:
+            # Load all keys from the ConfigMap as environment variables
+            - configMapRef:
+                name: candorapi-config
+            # Load all keys from the Secret as environment variables
+            - secretRef:
+                name: candorapi-secrets
           resources:
             requests:
               memory: "256Mi"          # Minimum RAM guaranteed to this pod
