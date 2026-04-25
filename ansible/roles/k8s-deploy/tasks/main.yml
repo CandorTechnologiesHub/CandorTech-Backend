@@ -8,7 +8,7 @@
 # Step 2: Copy the k8s/ folder from the repo to the server
 - name: Copy K8s manifests to server
   copy:
-    src: "../../k8s/"
+    src: "{{ playbook_dir }}/../k8s/"
     dest: "/tmp/k8s-{{ app_name }}/"
 
 # Step 3: Replace :latest tag with the exact build number
